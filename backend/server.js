@@ -31,6 +31,15 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// 根路由 - 添加一个简单的状态检查端点
+app.get('/', (req, res) => {
+  res.json({
+    status: 'success',
+    message: 'Imaginary API 正在运行',
+    version: '1.0.0'
+  });
+});
+
 // 静态文件服务
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -67,15 +76,12 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 连接数据库
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  useCreateIndex: true,
-  useFindAndModify: false
-})
-.then(() => {
-  console.log('MongoDB 连接成功');
+// 连接数据库并启动服务器
+const PORT = process.env.PORT || 5000;
+
+// 启动服务器
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`服务器运行在端口 ${PORT}`);
   
   // 确保上传目录存在
   const uploadDirs = ['uploads', 'uploads/images'];
@@ -86,16 +92,19 @@ mongoose.connect(process.env.MONGO_URI, {
       console.log(`创建目录: ${dirPath}`);
     }
   });
-
-  // 启动服务器
-  const PORT = process.env.PORT || 5000;
-  server.listen(PORT, () => {
-    console.log(`服务器运行在端口 ${PORT}`);
+  
+  // 尝试连接数据库
+  mongoose.connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  })
+  .then(() => {
+    console.log('MongoDB 连接成功');
+  })
+  .catch(err => {
+    console.error('MongoDB 连接失败:', err.message);
+    console.log('服务器将继续运行，但数据库功能将不可用');
   });
-})
-.catch(err => {
-  console.error('MongoDB 连接失败:', err.message);
-  process.exit(1);
 });
 
 // 处理未捕获的异常
