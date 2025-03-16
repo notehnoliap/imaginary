@@ -79,33 +79,45 @@ app.use((err, req, res, next) => {
 // 连接数据库并启动服务器
 const PORT = process.env.PORT || 5000;
 
-// 启动服务器
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`服务器运行在端口 ${PORT}`);
-  
-  // 确保上传目录存在
-  const uploadDirs = ['uploads', 'uploads/images'];
-  uploadDirs.forEach(dir => {
-    const dirPath = path.join(__dirname, dir);
-    if (!fs.existsSync(dirPath)) {
-      fs.mkdirSync(dirPath, { recursive: true });
-      console.log(`创建目录: ${dirPath}`);
-    }
-  });
-  
-  // 尝试连接数据库
-  mongoose.connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-  })
-  .then(() => {
-    console.log('MongoDB 连接成功');
-  })
-  .catch(err => {
-    console.error('MongoDB 连接失败:', err.message);
-    console.log('服务器将继续运行，但数据库功能将不可用');
-  });
+// 连接数据库
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+.then(() => {
+  console.log('MongoDB 连接成功');
+})
+.catch(err => {
+  console.error('MongoDB 连接失败:', err.message);
+  console.log('服务器将继续运行，但数据库功能将不可用');
 });
+
+// 启动服务器
+if (process.env.NODE_ENV !== 'test') {
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`服务器运行在端口 ${PORT}`);
+    
+    // 确保上传目录存在
+    const uploadDirs = ['uploads', 'uploads/images'];
+    uploadDirs.forEach(dir => {
+      const dirPath = path.join(__dirname, dir);
+      if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
+        console.log(`创建目录: ${dirPath}`);
+      }
+    });
+    
+    // 尝试连接数据库
+    mongoose.connect(process.env.MONGO_URI)
+    .then(() => {
+      console.log('MongoDB 连接成功');
+    })
+    .catch(err => {
+      console.error('MongoDB 连接失败:', err.message);
+      console.log('服务器将继续运行，但数据库功能将不可用');
+    });
+  });
+}
 
 // 处理未捕获的异常
 process.on('uncaughtException', err => {

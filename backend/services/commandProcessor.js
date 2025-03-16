@@ -5,9 +5,31 @@ const Album = require('../models/Album');
 const vectorService = require('./vectorService');
 
 // 初始化 OpenAI 客户端
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+let openai;
+try {
+  openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY || 'dummy-key-for-testing'
+  });
+} catch (error) {
+  console.warn('OpenAI 客户端初始化失败:', error.message);
+  // 创建一个模拟的OpenAI客户端用于测试
+  openai = {
+    chat: {
+      completions: {
+        create: async () => ({
+          choices: [{ 
+            message: { 
+              content: JSON.stringify({
+                intent: 'search',
+                parameters: { query: '测试查询' }
+              })
+            }
+          }]
+        })
+      }
+    }
+  };
+}
 
 /**
  * 处理自然语言命令
